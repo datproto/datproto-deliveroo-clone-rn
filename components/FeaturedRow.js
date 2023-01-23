@@ -1,10 +1,31 @@
-import React from 'react'
+import React, {useEffect, useState} from 'react'
 import {Text, View} from 'react-native'
 import {ArrowRightIcon} from 'react-native-heroicons/outline'
 import {ScrollView} from 'nativewind/dist/preflight'
 import RestaurantCard from './RestaurantCard'
 
+import sanityClient from '../sanity'
+
 function FeaturedRow({id, title, description}) {
+  const [restaurants, setRestaurants] = useState([])
+
+  useEffect(() => {
+    sanityClient.fetch(`
+      *[_type == 'featured' && _id == $id] {
+        ...,
+        restaurants[] -> {
+          ...,
+          dishes[] ->,
+          type -> {
+            name
+          }
+        }
+      }[0]
+    `, {id}).then(({restaurants: rests}) => {
+      setRestaurants(rests)
+    })
+  }, [])
+
   return (
     <View>
       <View className={'mt-4 flex-row items-center justify-between px-4'}>
@@ -22,19 +43,21 @@ function FeaturedRow({id, title, description}) {
         showHorizontalScrollIndicator={false}
         className={'pt-4'}
       >
-        {/* Restaurant Card */}
-        <RestaurantCard
-          id={123}
-          imgUrl={'https://links.papareact.com/gn7'}
-          title={'Yo! Sprint Roll'}
-          rating={4.5}
-          genre={'Vietnamese'}
-          address={'123 Phao Dai Lang St'}
-          short_description={'Amazing traditional Sprint Roll restaurant'}
-          dishes={[]}
-          long={20}
-          lat={0}
-        />
+        {restaurants?.map(r => (
+          <RestaurantCard
+            key={r._id}
+            id={r._id}
+            imgUrl={r.image}
+            title={r.name}
+            rating={r.rating}
+            genre={r.type?.name}
+            address={r.address}
+            short_description={r.short_description}
+            dishes={r.dishes}
+            long={r.long}
+            lat={r.lat}
+          />
+        ))}
       </ScrollView>
     </View>
   )

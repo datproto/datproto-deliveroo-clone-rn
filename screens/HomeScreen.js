@@ -1,4 +1,4 @@
-import React, {useLayoutEffect} from 'react'
+import React, {useEffect, useLayoutEffect, useState} from 'react'
 import {Text, SafeAreaView, View} from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 import {Image, ScrollView, TextInput} from 'nativewind/dist/preflight'
@@ -10,13 +10,29 @@ import {
 } from 'react-native-heroicons/outline'
 import Categories from '../components/Categories'
 import FeaturedRow from '../components/FeaturedRow'
+import sanityClient from '../sanity'
 
 function HomeScreen() {
   const navigation = useNavigation()
+  const [featuredCategories, setFeaturedCategories] = useState([])
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false
+    })
+  }, [])
+
+  useEffect(() => {
+    sanityClient.fetch(`
+      *[_type == 'featured'] {
+        ...,
+        restaurants[] -> {
+          ...,
+          dishes[] ->
+        }
+      }
+    `).then(data => {
+      setFeaturedCategories(data)
     })
   }, [])
 
@@ -47,13 +63,13 @@ function HomeScreen() {
       {/*  Search */}
       <View className={'flex-row items-center space-x-2 pb-2 mx-4'}>
         <View className={'flex-row space-x-2 flex-1 bg-gray-200 p-3'}>
-          <MagnifyingGlassIcon color={'gray'} size={20} />
+          <MagnifyingGlassIcon color={'gray'} size={20}/>
           <TextInput
             placeholder={'Retaurants and cuisines'}
             keyboardeType={'default'}
           />
         </View>
-        <AdjustmentsHorizontalIcon color={'#00CCBB'} />
+        <AdjustmentsHorizontalIcon color={'#00CCBB'}/>
       </View>
 
       {/* Body */}
@@ -64,27 +80,17 @@ function HomeScreen() {
         }}
       >
         {/* Categories */}
-        <Categories />
+        <Categories/>
 
         {/* Featured  Rows */}
-        <FeaturedRow
-          id={'123'}
-          title={'Featured'}
-          description={'Paid placements from our partners'}
-          featuredCategory={'featured'}
-        />
-        <FeaturedRow
-          id={'1234'}
-          title={'Featured'}
-          description={'Paid placements from our partners'}
-          featuredCategory={'featured'}
-        />
-        <FeaturedRow
-          id={'12345'}
-          title={'Featured'}
-          description={'Paid placements from our partners'}
-          featuredCategory={'featured'}
-        />
+        {featuredCategories?.map(cat => (
+          <FeaturedRow
+            key={cat._id}
+            id={cat._id}
+            title={cat.name}
+            description={cat.short_description}
+          />
+        ))}
 
       </ScrollView>
     </SafeAreaView>
