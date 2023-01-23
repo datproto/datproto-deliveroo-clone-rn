@@ -15,7 +15,13 @@ function FeaturedRow({id, title, description}) {
         ...,
         restaurants[] -> {
           ...,
-          dishes[] ->,
+          dishes[] -> {
+            _id,
+            name,
+            short_description,
+            price,
+            image
+          },
           type -> {
             name
           }
